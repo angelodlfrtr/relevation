@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package relevation;
+
+service Relevation {
+  rpc Ping(Empty) returns (Empty) {}
+  rpc GetElevation(GetElevationInput) returns (GetElevationOutput) {}
+  rpc GetElevations(GetElevationsInput) returns (GetElevationsOutput) {}
+}
+
+message Empty {}
+
+message Dataset {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string attributions = 4;
+  Point upper_left = 5;
+  Point lower_left = 6;
+  Point upper_right = 7;
+  Point lower_right = 8;
+}
+
+message Point {
+  double lat = 1;
+  double lng = 2;
+  double elv = 3;
+  string dataset_id = 4;
+}
+
+message GetElevationInput {
+  Point point = 1;
+}
+
+message GetElevationOutput {
+  Point point = 1;
+}
+
+message GetElevationsInput {
+  repeated Point points = 1;
+}
+
+message GetElevationsOutput {
+  repeated Point points = 1;
+}
