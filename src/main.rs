@@ -5,8 +5,8 @@ use tonic::transport::Server;
 
 mod cmd;
 pub mod config;
-pub mod ntree;
 mod server;
+pub mod tree;
 
 /// constant defining no data result in server responses
 pub const NO_DATA_RESULT: f64 = 40075.;
@@ -22,8 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmd_matches = cmd::get_matches();
     if let Some(ref cmd_matches) = cmd_matches.subcommand_matches("run") {
         // Load config
-        let config_path = cmd_matches.value_of("config_path").unwrap();
-        let config_path_buf = PathBuf::from(config_path);
+        let config_path = cmd_matches.value_of("config_path");
+        if config_path.is_none() {
+            panic!("Config file required");
+        }
+
+        let config_path_buf = PathBuf::from(config_path.unwrap());
         let mut cfg = config::new();
         match cfg.load_from(&config_path_buf) {
             Ok(v) => v,
@@ -31,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // Create a new tree
-        let mut tr = ntree::Tree::new();
+        let mut tr = tree::Tree::new();
 
         // Use scope to let tr rwlock be unlocked before server start, else tr is never unlocked
         // for reading
@@ -51,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Start GRPC server
         let addr = cfg.host().clone().parse()?;
-        let service = server::RelevationService::new(tr);
+        let service = server::RelevationService::new(tr, 10);
 
         log::info!("Staring GRPC server on {}", cfg.host().clone());
 

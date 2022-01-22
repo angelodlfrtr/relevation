@@ -1,6 +1,8 @@
 use std::time::Instant;
 use tonic::{Code, Request, Response, Status};
 
+mod cache;
+
 pub mod relevation {
     tonic::include_proto!("relevation");
 }
@@ -10,17 +12,19 @@ use relevation::{
     Empty, GetElevationInput, GetElevationOutput, GetElevationsInput, GetElevationsOutput, Point,
 };
 
-// mod cache;
-
 // #[derive(Debug, Default)]
 pub struct RelevationService {
-    tree: crate::ntree::Tree,
+    tree: crate::tree::Tree,
+    cache: cache::Cache,
 }
 
 impl RelevationService {
     /// new Relevation Service
-    pub fn new(tree: crate::ntree::Tree) -> RelevationService {
-        RelevationService { tree }
+    pub fn new(tree: crate::tree::Tree, cache_size: usize) -> RelevationService {
+        RelevationService {
+            tree,
+            cache: cache::Cache::new(cache_size),
+        }
     }
 }
 
@@ -46,12 +50,12 @@ impl Relevation for RelevationService {
         // Papare point
         let mut point = None;
 
-        // Get elevation
-        let result = self
-            .tree
-            .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
-        if result.is_some() {
-            let cc = result.unwrap();
+        // Check cache
+        let cache_res = self
+            .cache
+            .get(coords[0], coords[1], Some(input_point.dataset_id.clone()));
+        if cache_res.is_some() {
+            let cc = cache_res.unwrap();
 
             point = Some(Point {
                 elv: cc.elevation,
@@ -59,6 +63,26 @@ impl Relevation for RelevationService {
                 lng: input_point.lng,
                 dataset_id: cc.dataset_id,
             })
+        } else {
+            // Not in cache
+
+            // Get elevation from tree
+            let result = self
+                .tree
+                .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
+            if result.is_some() {
+                let cc = result.unwrap();
+
+                // Save in cache
+                self.cache.add(coords[0], coords[1], cc.clone());
+
+                point = Some(Point {
+                    elv: cc.elevation,
+                    lat: input_point.lat,
+                    lng: input_point.lng,
+                    dataset_id: cc.dataset_id,
+                })
+            }
         }
 
         // Reply

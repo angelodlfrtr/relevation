@@ -17,6 +17,7 @@ pub struct Source {
 pub struct Config {
     pub host: Option<String>,
     pub port: Option<u16>,
+    pub cache_size: Option<usize>,
     pub sources: Option<Vec<Source>>,
 }
 
@@ -25,6 +26,7 @@ pub fn new() -> Config {
     Config {
         host: Some(String::from("127.0.0.1")),
         port: Some(50051),
+        cache_size: Some(10_000_000),
         sources: Some(Vec::with_capacity(0)),
     }
 }
