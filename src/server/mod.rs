@@ -58,7 +58,7 @@ impl Relevation for RelevationService {
             let cc = cache_res.unwrap();
 
             point = Some(Point {
-                elv: cc.elevation,
+                elv: Some(cc.elevation),
                 lat: input_point.lat,
                 lng: input_point.lng,
                 dataset_id: cc.dataset_id,
@@ -77,7 +77,7 @@ impl Relevation for RelevationService {
                 self.cache.add(coords[0], coords[1], cc.clone());
 
                 point = Some(Point {
-                    elv: cc.elevation,
+                    elv: Some(cc.elevation),
                     lat: input_point.lat,
                     lng: input_point.lng,
                     dataset_id: cc.dataset_id,
@@ -93,6 +93,7 @@ impl Relevation for RelevationService {
         Ok(Response::new(reply))
     }
 
+    /// Get elevation from request
     async fn get_elevations(
         &self,
         request: Request<GetElevationsInput>,
@@ -116,7 +117,7 @@ impl Relevation for RelevationService {
         for pt in input.points.iter() {
             // Prepare point
             let mut point = Point {
-                elv: crate::NO_DATA_RESULT,
+                elv: None,
                 lat: pt.lat,
                 lng: pt.lng,
                 dataset_id: "none".to_string(),
@@ -131,7 +132,7 @@ impl Relevation for RelevationService {
             if result.is_some() {
                 let cc = result.unwrap();
 
-                point.elv = cc.elevation;
+                point.elv = Some(cc.elevation);
                 point.dataset_id = cc.dataset_id.clone();
             }
 

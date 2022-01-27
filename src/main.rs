@@ -8,9 +8,6 @@ pub mod config;
 mod server;
 pub mod tree;
 
-/// constant defining no data result in server responses
-pub const NO_DATA_RESULT: f64 = 40075.;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Builder::new()
@@ -41,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // for reading
         {
             // Build tree
-            for source in cfg.sources.as_ref().unwrap().iter() {
+            for source in cfg.sources.iter() {
                 let ss: config::Source = source.clone();
 
                 log::info!("Load source with id {} in memory ...", ss.id);

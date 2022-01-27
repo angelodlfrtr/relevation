@@ -15,23 +15,24 @@ pub struct Source {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    pub host: Option<String>,
-    pub port: Option<u16>,
-    pub cache_size: Option<usize>,
-    pub sources: Option<Vec<Source>>,
+    pub host: String,
+    pub port: u16,
+    pub cache_size: usize,
+    pub sources: Vec<Source>,
 }
 
-// load_from load config toml from file "source"
+/// Returns new config with default values
 pub fn new() -> Config {
     Config {
-        host: Some(String::from("127.0.0.1")),
-        port: Some(50051),
-        cache_size: Some(10_000_000),
-        sources: Some(Vec::with_capacity(0)),
+        host: String::from("127.0.0.1"),
+        port: 50051,
+        cache_size: 10_000_000,
+        sources: Vec::with_capacity(0),
     }
 }
 
 impl Config {
+    // load_from load config toml from file "source"
     pub fn load_from(&mut self, source: &PathBuf) -> Result<(), &str> {
         // Read index file content
         let file_content = match fs::read_to_string(source.as_path()) {
@@ -45,22 +46,10 @@ impl Config {
             Err(_e) => return Err("error"),
         };
 
-        // Set default value
-        if self.host.is_none() {
-            self.host = Some("127.0.0.1".to_string());
-        }
-        if self.port.is_none() {
-            self.port = Some(50051);
-        }
-
         Ok(())
     }
 
     pub fn host(&self) -> String {
-        format!(
-            "{}:{}",
-            self.host.clone().unwrap(),
-            self.port.clone().unwrap()
-        )
+        format!("{}:{}", self.host, self.port)
     }
 }
