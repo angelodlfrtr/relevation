@@ -13,6 +13,7 @@ pub struct Entry {
     pub source: config::Source,
     pub dataset: gdal::Dataset,
     coord_trans: CoordTransform,
+    // band: raster::RasterBand,
     geo_transform_inv: (f64, f64, f64, f64, f64, f64),
     no_data_value: f64,
     // band_x_size: f64,
@@ -88,6 +89,7 @@ pub fn from_dataset(source: config::Source, dataset: Dataset) -> Entry {
 }
 
 impl Entry {
+    /// get altitude from entry
     pub fn get_altitude(&self, lat: f64, lng: f64) -> Option<f64> {
         // Convert coords
         let lat = &mut [lat];
@@ -121,6 +123,7 @@ impl Entry {
         Some(result)
     }
 
+    // Check if raster contain given point
     pub fn contain_point(&self, lat: f64, lng: f64) -> bool {
         // Convert coords
         let lat = &mut [lat];
@@ -131,6 +134,7 @@ impl Entry {
             .transform_coords(lng, lat, alt)
             .unwrap();
 
+        // Check
         lat[0] >= self.xmin && lat[0] <= self.xmax && lng[0] >= self.ymin && lng[0] <= self.ymax
     }
 }

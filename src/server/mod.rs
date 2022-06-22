@@ -19,7 +19,7 @@ pub struct RelevationService {
 }
 
 impl RelevationService {
-    /// new Relevation Service
+    /// New Relevation Service
     pub fn new(tree: crate::tree::Tree, cache_size: usize) -> RelevationService {
         RelevationService {
             tree,
@@ -30,11 +30,13 @@ impl RelevationService {
 
 #[tonic::async_trait]
 impl Relevation for RelevationService {
+    /// Ping service
     async fn ping(&self, _request: Request<Empty>) -> Result<Response<Empty>, Status> {
         let reply = Empty {};
         Ok(Response::new(reply))
     }
 
+    // Get elevation for a given point
     async fn get_elevation(
         &self,
         request: Request<GetElevationInput>,
@@ -54,34 +56,38 @@ impl Relevation for RelevationService {
         let cache_res = self
             .cache
             .get(coords[0], coords[1], Some(input_point.dataset_id.clone()));
-        if cache_res.is_some() {
-            let cc = cache_res.unwrap();
 
-            point = Some(Point {
-                elv: Some(cc.elevation),
-                lat: input_point.lat,
-                lng: input_point.lng,
-                dataset_id: cc.dataset_id,
-            })
-        } else {
-            // Not in cache
-
-            // Get elevation from tree
-            let result = self
-                .tree
-                .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
-            if result.is_some() {
-                let cc = result.unwrap();
-
-                // Save in cache
-                self.cache.add(coords[0], coords[1], cc.clone());
-
+        match cache_res {
+            // exist in cache
+            Some(cc) => {
                 point = Some(Point {
                     elv: Some(cc.elevation),
                     lat: input_point.lat,
                     lng: input_point.lng,
                     dataset_id: cc.dataset_id,
                 })
+            }
+            // not in cache
+            None => {
+                // Get elevation from tree
+                let result =
+                    self.tree
+                        .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
+
+                match result {
+                    Some(cc) => {
+                        // Save in cache
+                        self.cache.add(coords[0], coords[1], cc.clone());
+
+                        point = Some(Point {
+                            elv: Some(cc.elevation),
+                            lat: input_point.lat,
+                            lng: input_point.lng,
+                            dataset_id: cc.dataset_id,
+                        })
+                    }
+                    None => {}
+                }
             }
         }
 
@@ -93,7 +99,7 @@ impl Relevation for RelevationService {
         Ok(Response::new(reply))
     }
 
-    /// Get elevation from request
+    /// Get elevation for a given list of points
     async fn get_elevations(
         &self,
         request: Request<GetElevationsInput>,
@@ -114,6 +120,7 @@ impl Relevation for RelevationService {
             ));
         }
 
+        // For each point
         for pt in input.points.iter() {
             // Prepare point
             let mut point = Point {
@@ -129,11 +136,13 @@ impl Relevation for RelevationService {
             let result = self
                 .tree
                 .get_altitude(coords[0], coords[1], Some(pt.dataset_id.clone()));
-            if result.is_some() {
-                let cc = result.unwrap();
 
-                point.elv = Some(cc.elevation);
-                point.dataset_id = cc.dataset_id.clone();
+            match result {
+                Some(cc) => {
+                    point.elv = Some(cc.elevation);
+                    point.dataset_id = cc.dataset_id.clone();
+                }
+                None => {}
             }
 
             result_points.push(point);

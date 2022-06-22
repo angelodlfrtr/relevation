@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-// check_root validity
+// Check root validity
 pub fn check_root<'a>(root_path: &PathBuf) -> Result<(), &'a str> {
     // Check if path exist
     if !root_path.exists() {
@@ -16,7 +16,7 @@ pub fn check_root<'a>(root_path: &PathBuf) -> Result<(), &'a str> {
     return Ok(());
 }
 
-// list_geotif_files in root_path. Try to find files recursively with .tif extension
+// List geotif files in given root path. Try to find files recursively with .tif extension
 pub fn list_geotif_files(root_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
     let mut tif_paths = Vec::new();
 
@@ -24,6 +24,7 @@ pub fn list_geotif_files(root_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
         if entry.path().is_dir() {
             return true;
         }
+
         return entry
             .file_name()
             .to_str()

@@ -75,7 +75,7 @@ impl Tree {
 
         // Prefered dataset
         if dataset_id.is_some() {
-            let dataset_id_string = dataset_id.unwrap().clone();
+            let dataset_id_string = dataset_id.unwrap();
             if dataset_id_string.len() > 0 {
                 for etry in etries.iter() {
                     if etry.source.id == dataset_id_string {
@@ -108,27 +108,25 @@ impl Tree {
         let coords = &[lat, lng];
         let etry = self.find_entry_containing_point(coords[0], coords[1], dataset_id);
 
-        // If no entry found, return nothing
-        if etry.is_none() {
-            return None;
+        match etry {
+            Some(etry_val) => {
+                let elevation_result = etry_val.get_altitude(coords[0], coords[1]);
+
+                if elevation_result.is_some() {
+                    let elevation_result_value = elevation_result.unwrap();
+
+                    // Build result
+                    let result = ElevationResult {
+                        elevation: elevation_result_value,
+                        dataset_id: etry_val.source.id.clone(),
+                    };
+
+                    return Some(result);
+                }
+
+                None
+            }
+            None => None,
         }
-
-        // Get elevation
-        let etry_val = etry.unwrap();
-        let elevation_result = etry_val.get_altitude(coords[0], coords[1]);
-        if elevation_result.is_some() {
-            let elevation_result_value = elevation_result.unwrap();
-
-            // Build result
-            let result = ElevationResult {
-                elevation: elevation_result_value,
-                dataset_id: etry_val.source.id.clone(),
-            };
-
-            return Some(result);
-        }
-
-        // None
-        return None;
     }
 }
