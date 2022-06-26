@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // Create a new tree
-        let mut tr = tree::Tree::new();
+        let mut tr = tree::Tree::new(usize::MAX);
 
         // Use scope to let tr rwlock be unlocked before server start, else tr is never unlocked
         // for reading
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Start GRPC server
         let addr = cfg.host().parse()?;
-        let service = server::RelevationService::new(tr, 10);
+        let service = server::RelevationService::new(tr);
 
         log::info!("Staring GRPC server on {}", cfg.host());
 

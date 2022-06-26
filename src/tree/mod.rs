@@ -3,6 +3,7 @@ use gdal::Dataset;
 use std::error::Error;
 use std::path::PathBuf;
 
+mod cache;
 mod entry;
 pub mod errors;
 mod lib;
@@ -15,19 +16,21 @@ pub struct ElevationResult {
 
 pub struct Tree<'a> {
     entries: Vec<entry::Entry<'a>>,
+    cache: cache::Cache,
 }
 
 impl<'a> Default for Tree<'a> {
     fn default() -> Self {
-        Self::new()
+        Self::new(usize::MAX)
     }
 }
 
 impl<'a> Tree<'a> {
     /// new Tree with given cache capacity
-    pub fn new() -> Tree<'a> {
+    pub fn new(cache_size: usize) -> Tree<'a> {
         Tree {
             entries: Vec::new(),
+            cache: cache::Cache::new(cache_size),
         }
     }
 
@@ -110,25 +113,47 @@ impl<'a> Tree<'a> {
         dataset_id: Option<String>,
     ) -> Option<ElevationResult> {
         let coords = &[lat, lng];
-        let etry = self.find_entry_containing_point(coords[0], coords[1], dataset_id);
 
-        match etry {
-            Some(etry_val) => {
-                let elevation_result = etry_val.get_altitude(coords[0], coords[1]);
+        // Check cache
+        let cache_res = self.cache.get(coords[0], coords[1], dataset_id.clone());
 
-                if let Some(elevation_result_value) = elevation_result {
-                    // Build result
-                    let result = ElevationResult {
-                        elevation: elevation_result_value,
-                        dataset_id: etry_val.source.id.clone(),
-                    };
+        match cache_res {
+            // exist in cache
+            Some(cc) => {
+                // Build result
+                let result = ElevationResult {
+                    elevation: cc.elevation,
+                    dataset_id: cc.dataset_id,
+                };
 
-                    return Some(result);
-                }
-
-                None
+                Some(result)
             }
-            None => None,
+            // Find in tree
+            None => {
+                let etry = self.find_entry_containing_point(coords[0], coords[1], dataset_id);
+
+                match etry {
+                    Some(etry_val) => {
+                        let elevation_result = etry_val.get_altitude(coords[0], coords[1]);
+
+                        if let Some(elevation_result_value) = elevation_result {
+                            // Build result
+                            let result = ElevationResult {
+                                elevation: elevation_result_value,
+                                dataset_id: etry_val.source.id.clone(),
+                            };
+
+                            // Save in cache
+                            self.cache.add(coords[0], coords[1], result.clone());
+
+                            return Some(result);
+                        }
+
+                        None
+                    }
+                    None => None,
+                }
+            }
         }
     }
 }

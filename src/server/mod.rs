@@ -1,8 +1,6 @@
 use std::time::Instant;
 use tonic::{Code, Request, Response, Status};
 
-mod cache;
-
 pub mod relevation {
     tonic::include_proto!("relevation");
 }
@@ -15,16 +13,12 @@ use relevation::{
 // #[derive(Debug, Default)]
 pub struct RelevationService {
     tree: crate::tree::Tree<'static>,
-    cache: cache::Cache,
 }
 
 impl RelevationService {
     /// New Relevation Service
-    pub fn new(tree: crate::tree::Tree<'static>, cache_size: usize) -> RelevationService {
-        RelevationService {
-            tree,
-            cache: cache::Cache::new(cache_size),
-        }
+    pub fn new(tree: crate::tree::Tree<'static>) -> RelevationService {
+        RelevationService { tree }
     }
 }
 
@@ -52,13 +46,12 @@ impl Relevation for RelevationService {
         // Papare point
         let mut point = None;
 
-        // Check cache
-        let cache_res = self
-            .cache
-            .get(coords[0], coords[1], Some(input_point.dataset_id.clone()));
+        // Get elevation from tree
+        let result = self
+            .tree
+            .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
 
-        match cache_res {
-            // exist in cache
+        match result {
             Some(cc) => {
                 point = Some(Point {
                     elv: Some(cc.elevation),
@@ -67,28 +60,7 @@ impl Relevation for RelevationService {
                     dataset_id: cc.dataset_id,
                 })
             }
-            // not in cache
-            None => {
-                // Get elevation from tree
-                let result =
-                    self.tree
-                        .get_altitude(coords[0], coords[1], Some(input_point.dataset_id));
-
-                match result {
-                    Some(cc) => {
-                        // Save in cache
-                        self.cache.add(coords[0], coords[1], cc.clone());
-
-                        point = Some(Point {
-                            elv: Some(cc.elevation),
-                            lat: input_point.lat,
-                            lng: input_point.lng,
-                            dataset_id: cc.dataset_id,
-                        })
-                    }
-                    None => {}
-                }
-            }
+            None => {}
         }
 
         // Reply
