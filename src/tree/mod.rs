@@ -1,8 +1,10 @@
 use crate::config;
 use gdal::Dataset;
+use std::error::Error;
 use std::path::PathBuf;
 
 mod entry;
+pub mod errors;
 mod lib;
 
 #[derive(Debug, Clone)]
@@ -30,25 +32,22 @@ impl<'a> Tree<'a> {
     }
 
     // load_source load tiff files from source
-    pub fn load_source(&mut self, source: &'a config::Source) -> Result<(), &str> {
+    pub fn load_source(&mut self, source: &'a config::Source) -> Result<(), Box<dyn Error>> {
         let root_path = PathBuf::from(source.path.clone());
 
         // Check root validity (should exist and be a dir)
         lib::check_root(&root_path)?;
 
         // Find all geotiff files in dirs (recursive)
-        let tif_paths = match lib::list_geotif_files(&root_path) {
-            Ok(v) => v,
-            Err(_e) => return Err("error"),
-        };
+        let tif_paths = lib::list_geotif_files(&root_path)?;
 
         // Loop on files
         for pp in tif_paths.iter() {
             // Open dataset with gdal
-            let dataset = Dataset::open(pp.as_path()).unwrap();
+            let dataset = Dataset::open(pp.as_path())?;
 
             // Build entry
-            let etry = entry::from_dataset(source, dataset);
+            let etry = entry::from_dataset(source, dataset)?;
 
             self.entries.push(etry);
         }

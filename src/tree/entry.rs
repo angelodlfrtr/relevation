@@ -2,6 +2,9 @@ use crate::config;
 use gdal::raster;
 use gdal::spatial_ref;
 use gdal::Dataset;
+use std::error::Error;
+
+use super::errors;
 
 struct CoordTransform {
     pub orig: gdal::spatial_ref::CoordTransform,
@@ -13,10 +16,8 @@ pub struct Entry<'a> {
     pub source: &'a config::Source,
     pub dataset: gdal::Dataset,
     coord_trans: CoordTransform,
-    // band: raster::RasterBand<'a>,
     geo_transform_inv: (f64, f64, f64, f64, f64, f64),
     no_data_value: f64,
-    // band_x_size: f64,
     pub xmax: f64,
     pub xmin: f64,
     pub ymax: f64,
@@ -25,15 +26,15 @@ pub struct Entry<'a> {
 unsafe impl Send for Entry<'_> {}
 unsafe impl Sync for Entry<'_> {}
 
-pub fn from_dataset(source: &config::Source, dataset: Dataset) -> Entry {
+pub fn from_dataset(source: &config::Source, dataset: Dataset) -> Result<Entry, Box<dyn Error>> {
     // Get geo_transform
-    let gt = dataset.geo_transform().unwrap();
+    let gt = dataset.geo_transform()?;
 
     // Get coord trans instance
-    let dataset_spatial_ref = dataset.spatial_ref().unwrap();
-    let target_spatial_reference = spatial_ref::SpatialRef::from_epsg(4326).unwrap();
+    let dataset_spatial_ref = dataset.spatial_ref()?;
+    let target_spatial_reference = spatial_ref::SpatialRef::from_epsg(4326)?;
     let base_coord_trans =
-        spatial_ref::CoordTransform::new(&target_spatial_reference, &dataset_spatial_ref).unwrap();
+        spatial_ref::CoordTransform::new(&target_spatial_reference, &dataset_spatial_ref)?;
     let coord_trans = CoordTransform {
         orig: base_coord_trans,
     };
@@ -47,12 +48,10 @@ pub fn from_dataset(source: &config::Source, dataset: Dataset) -> Entry {
     // Convert dataset coords to EPSG:4326
     coord_trans
         .orig
-        .transform_coords(&mut [ymax], &mut [xmax], &mut [0.])
-        .unwrap();
+        .transform_coords(&mut [ymax], &mut [xmax], &mut [0.])?;
     coord_trans
         .orig
-        .transform_coords(&mut [ymin], &mut [xmin], &mut [0.])
-        .unwrap();
+        .transform_coords(&mut [ymin], &mut [xmin], &mut [0.])?;
 
     // Compute geo transforms
     let dev = gt[1] * gt[5] - gt[2] * gt[4];
@@ -66,27 +65,25 @@ pub fn from_dataset(source: &config::Source, dataset: Dataset) -> Entry {
     );
 
     // Load band
-    let band = dataset.rasterband(1).unwrap();
+    let band = dataset.rasterband(1)?;
 
     // no data value
-    let no_data_value = band.no_data_value().unwrap();
+    let no_data_value = match band.no_data_value() {
+        Some(no_data_value) => no_data_value,
+        None => return Err(Box::new(errors::NoNoDataValueError {})),
+    };
 
-    // band_x_size
-    // let band_x_size = band.x_size() as f64;
-
-    Entry {
+    Ok(Entry {
         source,
         dataset,
-        // band,
         coord_trans,
         geo_transform_inv,
         no_data_value,
-        // band_x_size,
         xmax,
         xmin,
         ymax,
         ymin,
-    }
+    })
 }
 
 impl<'a> Entry<'a> {
