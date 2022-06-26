@@ -39,11 +39,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             // Build tree
             for source in cfg.sources.iter() {
-                let ss: config::Source = source.clone();
+                // let ss: config::Source = source.clone();
 
-                log::info!("Load source with id {} in memory ...", ss.id);
+                log::info!("Load source with id {} in memory ...", source.id);
 
-                match tr.load_source(ss) {
+                match tr.load_source(source) {
                     Ok(v) => v,
                     Err(_e) => panic!("Failed to load source : {}", _e),
                 };

@@ -24,7 +24,7 @@ impl Tree {
     }
 
     // load_source load tiff files from source
-    pub fn load_source(&mut self, source: config::Source) -> Result<(), &str> {
+    pub fn load_source(&mut self, source: &config::Source) -> Result<(), &str> {
         let root_path = PathBuf::from(source.path.clone());
 
         // Check root validity (should exist and be a dir)
