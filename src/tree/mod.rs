@@ -15,6 +15,12 @@ pub struct Tree<'a> {
     entries: Vec<entry::Entry<'a>>,
 }
 
+impl<'a> Default for Tree<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> Tree<'a> {
     /// new Tree with given cache capacity
     pub fn new() -> Tree<'a> {
@@ -69,14 +75,13 @@ impl<'a> Tree<'a> {
         dataset_id: Option<String>,
     ) -> Option<&entry::Entry> {
         let etries = self.find_entries_containing_point(lat, lng);
-        if etries.len() == 0 {
+        if etries.is_empty() {
             return None;
         }
 
         // Prefered dataset
-        if dataset_id.is_some() {
-            let dataset_id_string = dataset_id.unwrap();
-            if dataset_id_string.len() > 0 {
+        if let Some(dataset_id_string) = dataset_id {
+            if !dataset_id_string.is_empty() {
                 for etry in etries.iter() {
                     if etry.source.id == dataset_id_string {
                         return Some(etry);
@@ -95,7 +100,7 @@ impl<'a> Tree<'a> {
             }
         }
 
-        return Some(result);
+        Some(result)
     }
 
     /// get altitude from lat and lng
@@ -112,9 +117,7 @@ impl<'a> Tree<'a> {
             Some(etry_val) => {
                 let elevation_result = etry_val.get_altitude(coords[0], coords[1]);
 
-                if elevation_result.is_some() {
-                    let elevation_result_value = elevation_result.unwrap();
-
+                if let Some(elevation_result_value) = elevation_result {
                     // Build result
                     let result = ElevationResult {
                         elevation: elevation_result_value,

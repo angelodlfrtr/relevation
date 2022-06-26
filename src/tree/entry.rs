@@ -25,7 +25,7 @@ pub struct Entry<'a> {
 unsafe impl Send for Entry<'_> {}
 unsafe impl Sync for Entry<'_> {}
 
-pub fn from_dataset<'a>(source: &'a config::Source, dataset: Dataset) -> Entry<'a> {
+pub fn from_dataset(source: &config::Source, dataset: Dataset) -> Entry {
     // Get geo_transform
     let gt = dataset.geo_transform().unwrap();
 

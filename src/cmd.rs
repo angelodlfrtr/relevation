@@ -7,5 +7,5 @@ pub fn get_matches() -> ArgMatches {
         .subcommand(App::new("run").arg(Arg::new("config_path").default_value("config.toml")))
         .setting(AppSettings::ArgRequiredElseHelp);
 
-    return matches.get_matches();
+    matches.get_matches()
 }

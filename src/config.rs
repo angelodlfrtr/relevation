@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use toml;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -33,15 +33,15 @@ pub fn new() -> Config {
 
 impl Config {
     // load_from load config toml from file "source"
-    pub fn load_from(&mut self, source: &PathBuf) -> Result<(), &str> {
+    pub fn load_from(&mut self, source: &Path) -> Result<(), &str> {
         // Read index file content
-        let file_content = match fs::read_to_string(source.as_path()) {
+        let file_content = match fs::read_to_string(source) {
             Ok(v) => v,
             Err(_e) => return Err("error"),
         };
 
         // Read TOML
-        *self = match toml::from_str(&file_content.to_string()) {
+        *self = match toml::from_str(&file_content) {
             Ok(v) => v,
             Err(_e) => return Err("error"),
         };

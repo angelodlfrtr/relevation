@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Parse cmd
     let cmd_matches = cmd::get_matches();
-    if let Some(ref cmd_matches) = cmd_matches.subcommand_matches("run") {
+    if let Some(cmd_matches) = cmd_matches.subcommand_matches("run") {
         // Load config
         let config_path = cmd_matches.value_of("config_path");
         if config_path.is_none() {

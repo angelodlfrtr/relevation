@@ -1,8 +1,9 @@
+use std::path::Path;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
 // Check root validity
-pub fn check_root<'a>(root_path: &PathBuf) -> Result<(), &'a str> {
+pub fn check_root<'a>(root_path: &Path) -> Result<(), &'a str> {
     // Check if path exist
     if !root_path.exists() {
         return Err("Provided data path seems to not existing");
@@ -13,11 +14,11 @@ pub fn check_root<'a>(root_path: &PathBuf) -> Result<(), &'a str> {
         return Err("Provided data path seems to not be a directory");
     }
 
-    return Ok(());
+    Ok(())
 }
 
 // List geotif files in given root path. Try to find files recursively with .tif extension
-pub fn list_geotif_files(root_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
+pub fn list_geotif_files(root_path: &Path) -> Result<Vec<PathBuf>, &str> {
     let mut tif_paths = Vec::new();
 
     fn is_tif_or_dir(entry: &walkdir::DirEntry) -> bool {
@@ -32,8 +33,8 @@ pub fn list_geotif_files(root_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
             .ends_with(".tif");
     }
 
-    let walker = WalkDir::new(root_path.to_str().unwrap()).into_iter();
-    for entry in walker.filter_entry(|e| is_tif_or_dir(e)) {
+    let walker = WalkDir::new(root_path).into_iter();
+    for entry in walker.filter_entry(is_tif_or_dir) {
         let file = entry.unwrap();
         if file
             .file_name()
@@ -45,5 +46,5 @@ pub fn list_geotif_files(root_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
         }
     }
 
-    return Ok(tif_paths);
+    Ok(tif_paths)
 }
