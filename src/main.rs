@@ -38,9 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // for reading
         {
             // Build tree
-            for source in cfg.sources.iter() {
-                // let ss: config::Source = source.clone();
-
+            for source in cfg.sources.clone().leak().iter() {
                 log::info!("Load source with id {} in memory ...", source.id);
 
                 match tr.load_source(source) {
@@ -51,10 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Start GRPC server
-        let addr = cfg.host().clone().parse()?;
+        let addr = cfg.host().parse()?;
         let service = server::RelevationService::new(tr, 10);
 
-        log::info!("Staring GRPC server on {}", cfg.host().clone());
+        log::info!("Staring GRPC server on {}", cfg.host());
 
         Server::builder()
             .concurrency_limit_per_connection(32)

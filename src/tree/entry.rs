@@ -9,11 +9,11 @@ struct CoordTransform {
 unsafe impl Send for CoordTransform {}
 unsafe impl Sync for CoordTransform {}
 
-pub struct Entry {
-    pub source: config::Source,
+pub struct Entry<'a> {
+    pub source: &'a config::Source,
     pub dataset: gdal::Dataset,
     coord_trans: CoordTransform,
-    // band: raster::RasterBand,
+    // band: raster::RasterBand<'a>,
     geo_transform_inv: (f64, f64, f64, f64, f64, f64),
     no_data_value: f64,
     // band_x_size: f64,
@@ -22,10 +22,10 @@ pub struct Entry {
     pub ymax: f64,
     pub ymin: f64,
 }
-unsafe impl Send for Entry {}
-unsafe impl Sync for Entry {}
+unsafe impl Send for Entry<'_> {}
+unsafe impl Sync for Entry<'_> {}
 
-pub fn from_dataset(source: config::Source, dataset: Dataset) -> Entry {
+pub fn from_dataset<'a>(source: &'a config::Source, dataset: Dataset) -> Entry<'a> {
     // Get geo_transform
     let gt = dataset.geo_transform().unwrap();
 
@@ -77,6 +77,7 @@ pub fn from_dataset(source: config::Source, dataset: Dataset) -> Entry {
     Entry {
         source,
         dataset,
+        // band,
         coord_trans,
         geo_transform_inv,
         no_data_value,
@@ -88,7 +89,7 @@ pub fn from_dataset(source: config::Source, dataset: Dataset) -> Entry {
     }
 }
 
-impl Entry {
+impl<'a> Entry<'a> {
     /// get altitude from entry
     pub fn get_altitude(&self, lat: f64, lng: f64) -> Option<f64> {
         // Convert coords

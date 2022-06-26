@@ -14,13 +14,13 @@ use relevation::{
 
 // #[derive(Debug, Default)]
 pub struct RelevationService {
-    tree: crate::tree::Tree,
+    tree: crate::tree::Tree<'static>,
     cache: cache::Cache,
 }
 
 impl RelevationService {
     /// New Relevation Service
-    pub fn new(tree: crate::tree::Tree, cache_size: usize) -> RelevationService {
+    pub fn new(tree: crate::tree::Tree<'static>, cache_size: usize) -> RelevationService {
         RelevationService {
             tree,
             cache: cache::Cache::new(cache_size),

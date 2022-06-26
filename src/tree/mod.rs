@@ -11,20 +11,20 @@ pub struct ElevationResult {
     pub dataset_id: String,
 }
 
-pub struct Tree {
-    entries: Vec<entry::Entry>,
+pub struct Tree<'a> {
+    entries: Vec<entry::Entry<'a>>,
 }
 
-impl Tree {
+impl<'a> Tree<'a> {
     /// new Tree with given cache capacity
-    pub fn new() -> Tree {
+    pub fn new() -> Tree<'a> {
         Tree {
             entries: Vec::new(),
         }
     }
 
     // load_source load tiff files from source
-    pub fn load_source(&mut self, source: &config::Source) -> Result<(), &str> {
+    pub fn load_source(&mut self, source: &'a config::Source) -> Result<(), &str> {
         let root_path = PathBuf::from(source.path.clone());
 
         // Check root validity (should exist and be a dir)
@@ -42,7 +42,7 @@ impl Tree {
             let dataset = Dataset::open(pp.as_path()).unwrap();
 
             // Build entry
-            let etry = entry::from_dataset(source.clone(), dataset);
+            let etry = entry::from_dataset(source, dataset);
 
             self.entries.push(etry);
         }
